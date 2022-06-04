@@ -6,16 +6,14 @@ window.title("Joedle")
 window.geometry("500x700")
 window.configure(background="white")
 
-
+blank = PhotoImage()
 
 def grid():
-    for widgets in letters.winfo_children():
-        widgets.destroy()
     x = 5
     z = 5
     for i in range(x * z):
-        b = Button(letters, width=0, height=0)
-        b.grid(row=math.floor(i / x), column=i % x, sticky="nsew", padx=0.2, pady=1)
+        b = Label(letters, width=20, height=20, image=blank, font=("Noto Sans SemiBold", 45), text=str(i)[0], compound='c')
+        b.grid(row=math.floor(i / x), column=i % x, sticky="nsew", padx=1, pady=1)
     for i in range(x):
         letters.columnconfigure(i, weight=1)
     for i in range(x + (z - x)):
