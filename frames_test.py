@@ -1,7 +1,6 @@
 from tkinter import *
 import math
-import time
-import random
+from PIL import Image, ImageTk
 
 class MainProgram():
     def __init__(self):
@@ -9,32 +8,44 @@ class MainProgram():
         self.root.title("Joedle")
         self.root.geometry("500x700")
         self.root.configure(background="white")
-        self.homepage=HomePage(self)
-        self.overlay=Overlay(self)
+        self.homepage = HomePage(self)
+        self.overlay = Overlay(self)
+        self.frames={}
+        for f in (self.homepage, self.overlay):
+            page_name=f.reference
+            print(f)
+            frame=f.window
+            print(frame)
+            self.frames[page_name]=frame
+
+
         self.root.rowconfigure(0, weight=1)
         self.root.columnconfigure(0, weight=1)
         self.root.mainloop()
 
+    def change_frame(self, page_name):
+        frame = self.frames[page_name]
+        frame.tkraise()
+
+    def format_image(self, i, size):
+        image = Image.open(i)
+        image = image.resize(size)
+        image = ImageTk.PhotoImage(image)
+        return image
 
 
-# class FrameManager():
-#     def __init__(self):
 
 class Overlay():
     def __init__(self,root):
+        self.reference="overlay"
         self.window = Frame(root.root, bg="pink", width=0, height=0)
         self.window.grid(row=0,column=0, sticky="nsew", padx=40, pady=15)
-        self.change(root)
-    def change(self,root):
-        number=random.randint(1,2)
-        if number==1:
-            root.homepage.window.tkraise()
-        if number==2:
-            self.window.tkraise()
-        self.window.after(100, self.change(root))
+        b=Button(self.window, width=10, height=5, command=lambda : root.change_frame("homepage"), text="X")
+        b.pack(side=TOP, anchor="e")
 
 class HomePage():
     def __init__(self, root):
+        self.reference="homepage"
         self.blank = PhotoImage()
         self.window=Frame(root.root, bg="red", width=0, height=0)
         self.window.grid(row=0,column=0, sticky="nsew")
@@ -61,9 +72,13 @@ class HomePage():
         self.topic.grid(row=1, column=1, sticky="nsew")
         self.letters.grid(row=2, column=0, columnspan=3, sticky="nsew")
         self.keyboard.grid(row=3, column=0, columnspan=3, sticky="nsew")
+        self.info_image = root.format_image("info.png", (50, 50))
+
+        self.infobutton = Button(self.information, image=self.info_image, width=10, height=10, compound="c", relief="flat",
+                            borderwidth=0,
+                            bg="white", activebackground="white", command= lambda:root.change_frame("overlay"))
+        self.infobutton.pack(side=LEFT, expand=True, fill='both')
         self.grid()
-
-
     def grid(self):
         x = 6
         z = 5
