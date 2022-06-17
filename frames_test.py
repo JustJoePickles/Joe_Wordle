@@ -1,6 +1,8 @@
 from tkinter import *
 import math
 from PIL import Image, ImageTk
+import requests
+import random
 
 
 class MainProgram():
@@ -20,7 +22,6 @@ class MainProgram():
 
         self.root.rowconfigure(0, weight=1)
         self.root.columnconfigure(0, weight=1)
-        # self.change_frame("homepage")
         self.root.mainloop()
 
     def change_frame(self, page_name):
@@ -33,6 +34,27 @@ class MainProgram():
         image = ImageTk.PhotoImage(image)
         return image
 
+    def enter_topic(self):
+        if self.overlay.started == True:
+            self.change_frame("homepage")
+        else:
+            query = self.overlay.topic.get()
+            self.overlay.topic.config(state=DISABLED)
+            request = requests.get("https://api.datamuse.com/words?topics=" + query)
+            words = request.json()
+            options = []
+            for i in words[0:20]:
+                print(i['word'])
+                if len(i['word'])<8:
+                    options.append(i['word'])
+            self.overlay.started = True
+            print(options)
+            choice=random.choice(options)
+            print(choice)
+            self.homepage.grid(len(choice))
+            self.homepage.topic_label["text"] = query
+            self.change_frame("homepage")
+
 
 class Overlay():
     def __init__(self, root):
@@ -41,6 +63,8 @@ class Overlay():
         self.window.grid(row=0, column=0, sticky="nsew", padx=40, pady=15)
 
         self.font = ("Noto Sans SemiBold", 14)
+
+        self.started = False
 
         self.window.rowconfigure(0, weight=4)
         self.window.rowconfigure(1, weight=10)
@@ -71,12 +95,11 @@ class Overlay():
         title_screen = Label(title, image=self.title_image, width=10, height=20, compound="c", bg="#0D0D13")
         title_screen.pack(side=LEFT, expand=True, fill='both')
 
-        topic = Entry(topic_frame, font=self.font)
-        enter = Button(topic_frame, text="Enter", font=self.font, command=lambda: root.change_frame("homepage"))
+        self.topic = Entry(topic_frame, font=self.font)
+        enter = Button(topic_frame, text="Enter", font=self.font, command=lambda: root.enter_topic())
 
-        topic.grid(row=0, column=0, sticky="nsew", pady=(0, 20), padx=10)
+        self.topic.grid(row=0, column=0, sticky="nsew", pady=(0, 20), padx=10)
         enter.grid(row=0, column=1, sticky="nsew", pady=(0, 20), padx=(20, 30))
-        instructions.update()
 
 
 class HomePage():
@@ -106,8 +129,8 @@ class HomePage():
         self.title.grid(row=0, column=1, sticky="nsew")
         self.timer.grid(row=0, column=2, sticky="nsew")
         self.topic.grid(row=1, column=1, sticky="nsew")
-        self.letters.grid(row=2, column=0, columnspan=3, sticky="nsew",padx=10)
-        self.keyboard.grid(row=3, column=0, columnspan=3, sticky="nsew",padx=20,pady=10)
+        self.letters.grid(row=2, column=0, columnspan=3, sticky="nsew", padx=10)
+        self.keyboard.grid(row=3, column=0, columnspan=3, sticky="nsew", padx=20, pady=10)
 
         self.row_zero = Frame(self.keyboard, bg="#0D0D13")
         self.row_one = Frame(self.keyboard, bg="#0D0D13")
@@ -142,11 +165,10 @@ class HomePage():
                                  font=("Noto Sans SemiBold", 20), image=self.blank, compound="c", width=10, height=10)
         self.topic_label.pack(side=LEFT, expand=True, fill='both')
 
-        self.grid()
         self.keyboard_maker()
 
-    def grid(self):
-        x, z = 6, 5
+    def grid(self, x):
+        z=5
         for i in range(x * z):
             b = Label(self.letters, width=20, height=20, image=self.blank, font=("Noto Sans SemiBold", 45),
                       text="",
