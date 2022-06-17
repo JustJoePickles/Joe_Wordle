@@ -9,6 +9,7 @@ class MainProgram():
         self.root.title("Joedle")
         self.root.geometry("500x700")
         self.root.configure(background="white")
+        self.images=["two_outof_two.png", "one_outof_two.png", "zero_outof_two.png"]
         self.homepage = HomePage(self)
         self.overlay = Overlay(self)
         self.frames = {}
@@ -19,7 +20,7 @@ class MainProgram():
 
         self.root.rowconfigure(0, weight=1)
         self.root.columnconfigure(0, weight=1)
-        # self.change_frame("homepage")
+        self.change_frame("homepage")
         self.root.mainloop()
 
     def change_frame(self, page_name):
@@ -82,7 +83,7 @@ class HomePage():
         self.window.grid(row=0, column=0, sticky="nsew")
         # self.window.pack(side=LEFT, expand=True, fill='both')
         self.window.columnconfigure(0, weight=1)
-        self.window.columnconfigure(1, weight=8)
+        self.window.columnconfigure(1, weight=6)
         self.window.columnconfigure(2, weight=1)
 
         self.window.rowconfigure(0, weight=2)
@@ -120,8 +121,16 @@ class HomePage():
         self.row_one.grid(row=1, column=0, sticky="nsew")
         self.row_two.grid(row=2, column=0, sticky="nsew")
 
-        # self.title_image = root.format_image
+        self.timer_image = root.format_image(root.images[2], (50,50))
+        self.timer_screen = Label(self.timer, image=self.timer_image, width=5, height=5, bg="#0D0D13")
+        self.timer_screen.pack(side=LEFT, expand=True, fill='both')
 
+        self.title_image = root.format_image("joedle.png",(400,90))
+
+
+
+        self.title_screen = Label(self.title, image=self.title_image, width=10,height=20, compound="c", bg="#0D0D13")
+        self.title_screen.pack(side=LEFT, expand=True, fill='both')
         self.info_image = root.format_image("info.png", (50, 50))
         self.infobutton = Button(self.information, image=self.info_image, width=10, height=10, compound="c",
                                  relief="flat",
