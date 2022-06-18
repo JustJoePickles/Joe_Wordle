@@ -56,9 +56,9 @@ class MainProgram():
                     options.append(i['word'])
             self.overlay.started = True
             print(options)
-            choice = random.choice(options)
-            print(choice)
-            self.homepage.grid(len(choice))
+            self.choice = random.choice(options)
+            print(self.choice)
+            self.homepage.grid(len(self.choice))
             self.homepage.topic_label["text"] = query
             self.change_frame("homepage")
 
@@ -73,18 +73,49 @@ class MainProgram():
             for key in keys:
                 self.root.bind(key, self.key_press)
             self.root.bind("<BackSpace>", self.backspace)
+            self.root.bind("<Return>", self.enter)
 
     def key_press(self, key):
-        if not isinstance(key,str):
+        print(self.cursor)
+        print(self.cursor % len(self.choice))
+        print(len(self.choice), "\n")
+        if not isinstance(key, str):
             key = key.char
-        self.homepage.grid_objects[self.cursor].config(text=key.upper())
-        self.cursor += 1
+        if self.cursor == 0:
+            self.homepage.grid_objects[self.cursor].config(text=key.upper())
+            self.cursor += 1
+
+        elif self.cursor % len(self.choice) != 0:
+            self.homepage.grid_objects[self.cursor].config(text=key.upper())
+            self.cursor += 1
 
     def backspace(self, a):
         if self.cursor > 0:
             self.cursor -= 1
         self.homepage.grid_objects[self.cursor].config(text="")
         print(self.cursor)
+
+    def enter(self, a):
+        if self.cursor % len(self.choice) == 0:
+            guess = []
+            for label in self.homepage.grid_objects[self.cursor - len(self.choice):self.cursor]:
+                guess.append([label.cget("text").lower(), label])
+            blue = [i for i, j in zip(guess, list(self.choice)) if i[0] == j]
+
+            print(blue)
+            print(guess)
+            guess = [x for x in guess if x not in blue]
+            print(guess)
+            leftovers=[]
+            [leftovers.append(x) for x in guess if x[0] not in leftovers]
+            yellow = [i for i, j in zip(guess, list(self.choice)) if i[0] in j]
+
+
+
+
+
+
+
 
 
 class Overlay():
@@ -212,7 +243,7 @@ class HomePage():
         for i in range(x + (z - x)):
             self.letters.rowconfigure(i, weight=1)
 
-    def keyboard_maker(self,root):
+    def keyboard_maker(self, root):
         def label_maker(type, i):
             b = Button(type, width=20, height=20, image=self.blank, font=("Noto Sans SemiBold", 20),
                        text=letters[i], compound='c', bg="#29292E", fg="white", relief="flat",
@@ -249,8 +280,10 @@ class HomePage():
                     label_maker(self.row_two, i)
         spacer = Label(self.row_one, width=20, height=20, image=self.blank, compound='c', bg="#0D0D13")
         spacer.pack(side="left", fill="both", expand=False, padx=1, pady=1)
-    def test(self,key):
+
+    def test(self, key):
         print(key)
+
 
 if __name__ == "__main__":
     MainProgram()
