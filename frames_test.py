@@ -3,6 +3,7 @@ import math
 from PIL import Image, ImageTk
 import requests
 import random
+import string
 
 
 class MainProgram():
@@ -14,6 +15,8 @@ class MainProgram():
         self.images = ["two_outof_two.png", "one_outof_two.png", "zero_outof_two.png"]
         self.homepage = HomePage(self)
         self.overlay = Overlay(self)
+        self.top_layer = "overlay"
+        self.cursor = 0
         self.frames = {}
         for f in (self.homepage, self.overlay):
             page_name = f.reference
@@ -27,6 +30,8 @@ class MainProgram():
     def change_frame(self, page_name):
         frame = self.frames[page_name]
         frame.tkraise()
+        self.top_layer = page_name
+        self.keybinding()
 
     def format_image(self, i, size):
         image = Image.open(i)
@@ -40,22 +45,44 @@ class MainProgram():
         else:
             query = self.overlay.topic.get()
             self.overlay.topic.config(state=DISABLED)
+            self.overlay.topic.config(disabledforeground=self.overlay.topic.cget('foreground'))
             request = requests.get("https://api.datamuse.com/words?topics=" + query)
             words = request.json()
             options = []
             for i in words[0:20]:
                 print(i['word'])
-                if len(i['word'])<8:
+                if 2 < len(i['word']) < 8 and i["word"].isalpha():
                     options.append(i['word'])
             self.overlay.started = True
             print(options)
-            choice=random.choice(options)
+            choice = random.choice(options)
             print(choice)
             self.homepage.grid(len(choice))
             self.homepage.topic_label["text"] = query
             self.change_frame("homepage")
 
+    def keybinding(self):
+        keys = string.ascii_lowercase + string.ascii_uppercase
+        keys = list(keys)
+        if self.top_layer == "overlay" and self.overlay.started:
+            for key in keys:
+                self.root.unbind(key)
+            self.root.unbind("<BackSpace>")
+        if self.top_layer == "homepage":
+            for key in keys:
+                self.root.bind(key, self.key_press)
+            self.root.bind("<BackSpace>", self.backspace)
 
+    def key_press(self, key):
+        letter=key.char
+        self.homepage.grid_objects[self.cursor].config(text=letter.upper())
+        self.cursor+=1
+
+    def backspace(self, a):
+        if self.cursor>0:
+            self.cursor-=1
+        self.homepage.grid_objects[self.cursor].config(text="")
+        print(self.cursor)
 class Overlay():
     def __init__(self, root):
         self.reference = "overlay"
@@ -106,6 +133,7 @@ class HomePage():
     def __init__(self, root):
         self.reference = "homepage"
         self.blank = PhotoImage()
+        self.grid_objects = []
         self.window = Frame(root.root, bg="#0D0D13", width=0, height=0)
         self.window.grid(row=0, column=0, sticky="nsew")
         # self.window.pack(side=LEFT, expand=True, fill='both')
@@ -168,12 +196,13 @@ class HomePage():
         self.keyboard_maker()
 
     def grid(self, x):
-        z=5
+        z = 5
         for i in range(x * z):
             b = Label(self.letters, width=20, height=20, image=self.blank, font=("Noto Sans SemiBold", 45),
                       text="",
                       compound='c', bg="#29292E", fg="white")
             b.grid(row=math.floor(i / x), column=i % x, sticky="nsew", padx=2, pady=1)
+            self.grid_objects.append(b)
         for i in range(x):
             self.letters.columnconfigure(i, weight=1)
         for i in range(x + (z - x)):
