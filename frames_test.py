@@ -13,10 +13,11 @@ class MainProgram():
         self.root.geometry("500x700")
         self.root.configure(background="white")
         self.images = ["two_outof_two.png", "one_outof_two.png", "zero_outof_two.png"]
-        self.homepage = HomePage(self)
-        self.overlay = Overlay(self)
+
         self.top_layer = "overlay"
         self.cursor = 0
+        self.homepage = HomePage(self)
+        self.overlay = Overlay(self)
         self.frames = {}
         for f in (self.homepage, self.overlay):
             page_name = f.reference
@@ -74,15 +75,18 @@ class MainProgram():
             self.root.bind("<BackSpace>", self.backspace)
 
     def key_press(self, key):
-        letter=key.char
-        self.homepage.grid_objects[self.cursor].config(text=letter.upper())
-        self.cursor+=1
+        if not isinstance(key,str):
+            key = key.char
+        self.homepage.grid_objects[self.cursor].config(text=key.upper())
+        self.cursor += 1
 
     def backspace(self, a):
-        if self.cursor>0:
-            self.cursor-=1
+        if self.cursor > 0:
+            self.cursor -= 1
         self.homepage.grid_objects[self.cursor].config(text="")
         print(self.cursor)
+
+
 class Overlay():
     def __init__(self, root):
         self.reference = "overlay"
@@ -99,8 +103,8 @@ class Overlay():
 
         self.window.columnconfigure(0, weight=1)
 
-        title = Frame(self.window, bg="orange")
-        instructions = Frame(self.window, bg="Blue")
+        title = Frame(self.window, bg="#0D0D13")
+        instructions = Frame(self.window, bg="#0D0D13")
         topic_frame = Frame(self.window, bg="#0D0D13")
 
         title.grid(row=0, column=0, sticky="nsew")
@@ -146,10 +150,10 @@ class HomePage():
         self.window.rowconfigure(2, weight=5)
         self.window.rowconfigure(3, weight=4)
 
-        self.information = Frame(self.window, bg="blue")
-        self.title = Frame(self.window, bg="red")
-        self.timer = Frame(self.window, bg="green")
-        self.topic = Frame(self.window, bg="yellow")
+        self.information = Frame(self.window, bg="#0D0D13")
+        self.title = Frame(self.window, bg="#0D0D13")
+        self.timer = Frame(self.window, bg="#0D0D13")
+        self.topic = Frame(self.window, bg="#0D0D13")
         self.letters = Frame(self.window, bg="#0D0D13")
         self.keyboard = Frame(self.window, bg="#0D0D13")
 
@@ -193,7 +197,7 @@ class HomePage():
                                  font=("Noto Sans SemiBold", 20), image=self.blank, compound="c", width=10, height=10)
         self.topic_label.pack(side=LEFT, expand=True, fill='both')
 
-        self.keyboard_maker()
+        self.keyboard_maker(root)
 
     def grid(self, x):
         z = 5
@@ -208,11 +212,11 @@ class HomePage():
         for i in range(x + (z - x)):
             self.letters.rowconfigure(i, weight=1)
 
-    def keyboard_maker(self):
+    def keyboard_maker(self,root):
         def label_maker(type, i):
             b = Button(type, width=20, height=20, image=self.blank, font=("Noto Sans SemiBold", 20),
-                       text=letters[i],
-                       compound='c', bg="#29292E", fg="white", relief="flat")
+                       text=letters[i], compound='c', bg="#29292E", fg="white", relief="flat",
+                       command=lambda: root.key_press(letters[i]))
             b.pack(side="left", fill="both", expand=True, padx=1, pady=1)
 
         letters = ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "A", "S", "D", "F", "G", "H", "J", "K", "L", "",
@@ -229,10 +233,15 @@ class HomePage():
                     label_maker(self.row_one, i)
 
             if math.floor(i / x) == 2:
-                if i % x == 0 or i % x == 8:
+                if i % x == 0:
                     b = Button(self.row_two, width=50, height=20, image=self.blank, font=("Noto Sans SemiBold", 15),
-                               text=letters[i],
-                               compound='c', bg="#29292E", fg="white", relief="flat")
+                               text=letters[i], compound='c', bg="#29292E", fg="white", relief="flat",
+                               command=lambda: root.backspace(letters[i]))
+                    b.pack(side="left", fill="both", expand=True, padx=1, pady=1)
+                elif i % x == 8:
+                    b = Button(self.row_two, width=50, height=20, image=self.blank, font=("Noto Sans SemiBold", 15),
+                               text=letters[i], compound='c', bg="#29292E", fg="white", relief="flat",
+                               command=lambda: self.test(letters[i]))
                     b.pack(side="left", fill="both", expand=True, padx=1, pady=1)
                 elif i % x == 9:
                     pass
@@ -240,7 +249,8 @@ class HomePage():
                     label_maker(self.row_two, i)
         spacer = Label(self.row_one, width=20, height=20, image=self.blank, compound='c', bg="#0D0D13")
         spacer.pack(side="left", fill="both", expand=False, padx=1, pady=1)
-
+    def test(self,key):
+        print(key)
 
 if __name__ == "__main__":
     MainProgram()
