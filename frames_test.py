@@ -15,9 +15,7 @@ class MainProgram():
         self.images = ["two_outof_two.png", "one_outof_two.png", "zero_outof_two.png"]
 
         self.top_layer = "overlay"
-        self.cursor = 0
-        self.row = 1
-        self.games=0
+        self.games = 0
         self.homepage = HomePage(self)
         self.overlay = Overlay(self)
         self.frames = {}
@@ -46,6 +44,8 @@ class MainProgram():
         if self.overlay.started:
             self.change_frame("homepage")
         else:
+            self.cursor = 0
+            self.row = 1
             query = self.overlay.topic.get()
             self.overlay.topic.config(state=DISABLED)
             self.overlay.topic.config(disabledforeground=self.overlay.topic.cget('foreground'))
@@ -74,21 +74,29 @@ class MainProgram():
             for key in keys:
                 self.root.unbind(key)
             self.root.unbind("<BackSpace>")
+        print(self.overlay.started)
         if self.top_layer == "homepage":
             for key in keys:
                 self.root.bind(key, self.key_press)
             self.root.bind("<BackSpace>", self.backspace)
             self.root.bind("<Return>", self.enter)
 
+        if not self.overlay.started:
+            for key in keys:
+                self.root.unbind(key)
+            self.root.unbind("<BackSpace>")
+
     def key_press(self, key):
-        # print(self.cursor)
-        # print(self.cursor % len(self.choice))
-        # print(len(self.choice), "\n")
+        print(self.cursor)
+        print(self.cursor % len(self.choice))
+        print(len(self.choice), "\n")
         if not isinstance(key, str):
             key = key.char
         if self.cursor < self.row * len(self.choice):
+            print(key)
             self.homepage.grid_objects[self.cursor].config(text=key.upper())
             self.cursor += 1
+            print(self.homepage.grid_objects[self.cursor]["text"])
 
     def backspace(self, a):
         if self.cursor > (self.row - 1) * len(self.choice):
@@ -108,34 +116,49 @@ class MainProgram():
                 if guess[i] == self.choice[i]:
                     blue.append(guess[i])
                     blue_label.append(guess_label[i])
-            if self.row == 5:
-                self.row -= 1
-            if blue_label == guess_label:
-                self.homepage.topic_label["text"] = "You Win!"
-                self.row -= 1
             yellow = []
             yellow_label = []
             for i in range(len(guess)):
                 if guess_label[i] not in blue_label:
                     yellow.append(guess[i])
                     yellow_label.append(guess_label[i])
-            yellow_two=[]
-            yellow_label_two=[]
+            yellow_two = []
+            yellow_label_two = []
             for i in range(len(yellow)):
                 if yellow[i] in self.choice:
                     yellow_two.append(yellow[i])
                     yellow_label_two.append(yellow_label[i])
             label_remover = []
-            for i in range(len(yellow_two)-1, -1, -1):
+            for i in range(len(yellow_two) - 1, -1, -1):
                 if yellow_two[i] in yellow_two[:i]:
                     label_remover.append(yellow_label_two[i])
             yellow_label = [i for i in yellow_label_two if i not in label_remover]
             for item in blue_label:
                 item.configure(background="#3B6D8C")
+                item.update()
             for item in yellow_label:
                 item.configure(background="#F2CC0F")
+                item.update()
+            if blue_label == guess_label:
+                self.homepage.topic_label["text"] = "You Win!"
+                self.row -= 1
+                self.game_over()
+            elif self.row == 5:
+                self.homepage.topic_label["text"] = "Game Over."
+                self.row -= 1
+                self.game_over()
             self.row += 1
 
+    def game_over(self):
+        if self.games == 2:
+            print("Stuff")
+        else:
+            self.overlay.started = False
+            self.keybinding()
+            self.games += 1
+            self.homepage.timer_screen.config(image=self.format_image(self.images[self.games], (50, 50)))
+            self.homepage.timer_screen.update()
+            self.root.after(1000, self.change_frame("overlay"))
 
 
 class Overlay():
@@ -188,7 +211,6 @@ class HomePage():
     def __init__(self, root):
         self.reference = "homepage"
         self.blank = PhotoImage()
-        self.grid_objects = []
         self.window = Frame(root.root, bg="#0D0D13", width=0, height=0)
         self.window.grid(row=0, column=0, sticky="nsew")
         # self.window.pack(side=LEFT, expand=True, fill='both')
@@ -251,6 +273,9 @@ class HomePage():
         self.keyboard_maker(root)
 
     def grid(self, x):
+        for widget in self.letters.winfo_children():
+            widget.destroy()
+        self.grid_objects = []
         z = 5
         for i in range(x * z):
             b = Label(self.letters, width=20, height=20, image=self.blank, font=("Noto Sans SemiBold", 45),
