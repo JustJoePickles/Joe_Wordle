@@ -17,7 +17,7 @@ class MainProgram():
 
         self.top_layer = "overlay"
         self.games = 0
-        self.date = datetime(1900,1,1)
+        self.date = datetime(1900, 1, 1)
         self.homepage = HomePage(self)
         self.overlay = Overlay(self)
         self.frames = {}
@@ -43,32 +43,36 @@ class MainProgram():
         return image
 
     def enter_topic(self):
+        query = self.overlay.topic.get()
         now = datetime.now().time()
-        if self.overlay.started or datetime(2000, 1, 1, now.hour, now.minute, now.second)<self.date:
+        query_test = query.split(" ")
+        query_test = [x for x in query_test if x != ""]
+        if len(query_test) < 1 or len(query_test) > 1:
+            self.overlay.topic.delete(0, END)
+            self.overlay.topic.insert(0, "Try using one word")
+            return None
+        if self.overlay.started or datetime(2000, 1, 1, now.hour, now.minute, now.second) < self.date:
             self.change_frame("homepage")
         else:
             self.cursor = 0
             self.row = 1
-            query = self.overlay.topic.get()
-            self.overlay.topic.config(state=DISABLED)
-            self.overlay.topic.config(disabledforeground=self.overlay.topic.cget('foreground'))
             request = requests.get("https://api.datamuse.com/words?topics=" + query)
             words = request.json()
+            if not words:
+                self.overlay.topic.delete(0, END)
+                self.overlay.topic.insert(0, "That is not a valid word")
+                return None
+            self.overlay.topic.config(state=DISABLED)
+            self.overlay.topic.config(disabledforeground=self.overlay.topic.cget('foreground'))
             options = []
             for i in words[0:20]:
-                print(i['word'])
                 if 2 < len(i['word']) < 8 and i["word"].isalpha():
                     options.append(i['word'])
             self.overlay.started = True
-            print(options)
             self.choice = random.choice(options)
-            print(self.choice)
-            # self.choice = "swede"
             self.homepage.grid(len(self.choice))
             self.homepage.topic_label.config(font=self.homepage.font)
             self.homepage.topic_label["text"] = query
-
-            # self.homepage.topic_label["text"] = query
             self.change_frame("homepage")
 
     def keybinding(self):
@@ -78,18 +82,13 @@ class MainProgram():
             for key in keys:
                 self.root.unbind(key)
             self.root.unbind("<BackSpace>")
-        print(self.overlay.started)
         if self.top_layer == "homepage":
             for key in keys:
                 self.root.bind(key, self.key_press)
             self.root.bind("<BackSpace>", self.backspace)
             self.root.bind("<Return>", self.enter)
 
-
     def key_press(self, key):
-        # print(self.cursor)
-        # print(self.cursor % len(self.choice))
-        # print(len(self.choice), "\n")
         if not isinstance(key, str):
             key = key.char
         if self.cursor < self.row * len(self.choice):
@@ -118,10 +117,7 @@ class MainProgram():
                         blue_label.append(guess_label[i])
                 yellow = []
                 yellow_label = []
-                print(sum(1 for x in blue if x == guess[0]))
                 for i in range(len(guess)):
-                    # print(i, "\nguess", yellow.count(guess[i]), "\nblue", self.choice.count(guess[i]), "\nGuess",
-                    # guess, "\nBlue", blue, "\nguess[i]", guess[i])
                     if guess_label[i] not in blue_label and yellow.count(guess[i]) + blue.count(
                             guess[i]) < self.choice.count(guess[i]):
                         yellow.append(guess[i])
@@ -162,10 +158,10 @@ class MainProgram():
 
             now = datetime.now().time()
             # Just use January the first, 2000
-            d1 = datetime(2000,1,1, now.hour, now.minute, now.second)
+            d1 = datetime(2000, 1, 1, now.hour, now.minute, now.second)
             self.date = d1 + timedelta(minutes=1)
             self.homepage.topic_label.config(text="You have reached your limit, play again at " + str(self.date.time()))
-            self.games=0
+            self.games = 0
         else:
             self.overlay.started = False
             self.keybinding()
@@ -235,7 +231,7 @@ class HomePage():
 
         self.window.rowconfigure(0, weight=2)
         self.window.rowconfigure(1, weight=1)
-        self.window.rowconfigure(2, weight=5)
+        self.window.rowconfigure(2, weight=8)
         self.window.rowconfigure(3, weight=4)
 
         self.information = Frame(self.window, bg="#0D0D13")
