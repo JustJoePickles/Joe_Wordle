@@ -16,6 +16,8 @@ class MainProgram():
 
         self.top_layer = "overlay"
         self.cursor = 0
+        self.row = 1
+        self.games=0
         self.homepage = HomePage(self)
         self.overlay = Overlay(self)
         self.frames = {}
@@ -41,25 +43,28 @@ class MainProgram():
         return image
 
     def enter_topic(self):
-        if self.overlay.started == True:
+        if self.overlay.started:
             self.change_frame("homepage")
         else:
             query = self.overlay.topic.get()
             self.overlay.topic.config(state=DISABLED)
             self.overlay.topic.config(disabledforeground=self.overlay.topic.cget('foreground'))
-            request = requests.get("https://api.datamuse.com/words?topics=" + query)
-            words = request.json()
-            options = []
-            for i in words[0:20]:
-                print(i['word'])
-                if 2 < len(i['word']) < 8 and i["word"].isalpha():
-                    options.append(i['word'])
+            # request = requests.get("https://api.datamuse.com/words?topics=" + query)
+            # words = request.json()
+            # options = []
+            # for i in words[0:20]:
+            #     print(i['word'])
+            #     if 2 < len(i['word']) < 8 and i["word"].isalpha():
+            #         options.append(i['word'])
             self.overlay.started = True
-            print(options)
-            self.choice = random.choice(options)
-            print(self.choice)
+            # print(options)
+            # self.choice = random.choice(options)
+            # print(self.choice)
+            self.choice = "swede"
             self.homepage.grid(len(self.choice))
-            self.homepage.topic_label["text"] = query
+            self.homepage.topic_label["text"] = "Swede"
+
+            # self.homepage.topic_label["text"] = query
             self.change_frame("homepage")
 
     def keybinding(self):
@@ -76,45 +81,60 @@ class MainProgram():
             self.root.bind("<Return>", self.enter)
 
     def key_press(self, key):
-        print(self.cursor)
-        print(self.cursor % len(self.choice))
-        print(len(self.choice), "\n")
+        # print(self.cursor)
+        # print(self.cursor % len(self.choice))
+        # print(len(self.choice), "\n")
         if not isinstance(key, str):
             key = key.char
-        if self.cursor == 0:
-            self.homepage.grid_objects[self.cursor].config(text=key.upper())
-            self.cursor += 1
-
-        elif self.cursor % len(self.choice) != 0:
+        if self.cursor < self.row * len(self.choice):
             self.homepage.grid_objects[self.cursor].config(text=key.upper())
             self.cursor += 1
 
     def backspace(self, a):
-        if self.cursor > 0:
+        if self.cursor > (self.row - 1) * len(self.choice):
             self.cursor -= 1
         self.homepage.grid_objects[self.cursor].config(text="")
-        print(self.cursor)
 
     def enter(self, a):
-        if self.cursor % len(self.choice) == 0:
+        if self.cursor == self.row * len(self.choice):
             guess = []
+            guess_label = []
             for label in self.homepage.grid_objects[self.cursor - len(self.choice):self.cursor]:
-                guess.append([label.cget("text").lower(), label])
-            blue = [i for i, j in zip(guess, list(self.choice)) if i[0] == j]
-
-            print(blue)
-            print(guess)
-            guess = [x for x in guess if x not in blue]
-            print(guess)
-            leftovers=[]
-            [leftovers.append(x) for x in guess if x[0] not in leftovers]
-            yellow = [i for i, j in zip(guess, list(self.choice)) if i[0] in j]
-
-
-
-
-
-
+                guess.append(label.cget("text").lower())
+                guess_label.append(label)
+            blue = []
+            blue_label = []
+            for i in range(len(guess)):
+                if guess[i] == self.choice[i]:
+                    blue.append(guess[i])
+                    blue_label.append(guess_label[i])
+            if self.row == 5:
+                self.row -= 1
+            if blue_label == guess_label:
+                self.homepage.topic_label["text"] = "You Win!"
+                self.row -= 1
+            yellow = []
+            yellow_label = []
+            for i in range(len(guess)):
+                if guess_label[i] not in blue_label:
+                    yellow.append(guess[i])
+                    yellow_label.append(guess_label[i])
+            yellow_two=[]
+            yellow_label_two=[]
+            for i in range(len(yellow)):
+                if yellow[i] in self.choice:
+                    yellow_two.append(yellow[i])
+                    yellow_label_two.append(yellow_label[i])
+            label_remover = []
+            for i in range(len(yellow_two)-1, -1, -1):
+                if yellow_two[i] in yellow_two[:i]:
+                    label_remover.append(yellow_label_two[i])
+            yellow_label = [i for i in yellow_label_two if i not in label_remover]
+            for item in blue_label:
+                item.configure(background="#3B6D8C")
+            for item in yellow_label:
+                item.configure(background="#F2CC0F")
+            self.row += 1
 
 
 
@@ -209,7 +229,7 @@ class HomePage():
         self.row_one.grid(row=1, column=0, sticky="nsew")
         self.row_two.grid(row=2, column=0, sticky="nsew")
 
-        self.timer_image = root.format_image(root.images[2], (50, 50))
+        self.timer_image = root.format_image(root.images[0], (50, 50))
         self.timer_screen = Label(self.timer, image=self.timer_image, width=5, height=5, bg="#0D0D13")
         self.timer_screen.pack(side=LEFT, expand=True, fill='both')
 
