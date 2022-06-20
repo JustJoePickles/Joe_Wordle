@@ -4,6 +4,7 @@ from PIL import Image, ImageTk
 import requests
 import random
 import string
+from datetime import datetime, timedelta
 
 
 class MainProgram():
@@ -16,6 +17,7 @@ class MainProgram():
 
         self.top_layer = "overlay"
         self.games = 0
+        self.date = datetime(1900,1,1)
         self.homepage = HomePage(self)
         self.overlay = Overlay(self)
         self.frames = {}
@@ -41,7 +43,8 @@ class MainProgram():
         return image
 
     def enter_topic(self):
-        if self.overlay.started:
+        now = datetime.now().time()
+        if self.overlay.started or datetime(2000, 1, 1, now.hour, now.minute, now.second)<self.date:
             self.change_frame("homepage")
         else:
             self.cursor = 0
@@ -49,20 +52,21 @@ class MainProgram():
             query = self.overlay.topic.get()
             self.overlay.topic.config(state=DISABLED)
             self.overlay.topic.config(disabledforeground=self.overlay.topic.cget('foreground'))
-            # request = requests.get("https://api.datamuse.com/words?topics=" + query)
-            # words = request.json()
-            # options = []
-            # for i in words[0:20]:
-            #     print(i['word'])
-            #     if 2 < len(i['word']) < 8 and i["word"].isalpha():
-            #         options.append(i['word'])
+            request = requests.get("https://api.datamuse.com/words?topics=" + query)
+            words = request.json()
+            options = []
+            for i in words[0:20]:
+                print(i['word'])
+                if 2 < len(i['word']) < 8 and i["word"].isalpha():
+                    options.append(i['word'])
             self.overlay.started = True
-            # print(options)
-            # self.choice = random.choice(options)
-            # print(self.choice)
-            self.choice = "swede"
+            print(options)
+            self.choice = random.choice(options)
+            print(self.choice)
+            # self.choice = "swede"
             self.homepage.grid(len(self.choice))
-            self.homepage.topic_label["text"] = "Swede"
+            self.homepage.topic_label.config(font=self.homepage.font)
+            self.homepage.topic_label["text"] = query
 
             # self.homepage.topic_label["text"] = query
             self.change_frame("homepage")
@@ -81,84 +85,94 @@ class MainProgram():
             self.root.bind("<BackSpace>", self.backspace)
             self.root.bind("<Return>", self.enter)
 
-        if not self.overlay.started:
-            for key in keys:
-                self.root.unbind(key)
-            self.root.unbind("<BackSpace>")
 
     def key_press(self, key):
-        print(self.cursor)
-        print(self.cursor % len(self.choice))
-        print(len(self.choice), "\n")
+        # print(self.cursor)
+        # print(self.cursor % len(self.choice))
+        # print(len(self.choice), "\n")
         if not isinstance(key, str):
             key = key.char
         if self.cursor < self.row * len(self.choice):
-            print(key)
             self.homepage.grid_objects[self.cursor].config(text=key.upper())
             self.cursor += 1
-            print(self.homepage.grid_objects[self.cursor]["text"])
 
     def backspace(self, a):
-        if self.cursor > (self.row - 1) * len(self.choice):
-            self.cursor -= 1
-        self.homepage.grid_objects[self.cursor].config(text="")
+        if self.overlay.started:
+            if self.cursor > (self.row - 1) * len(self.choice):
+                self.cursor -= 1
+            self.homepage.grid_objects[self.cursor].config(text="")
 
     def enter(self, a):
-        if self.cursor == self.row * len(self.choice):
-            guess = []
-            guess_label = []
-            for label in self.homepage.grid_objects[self.cursor - len(self.choice):self.cursor]:
-                guess.append(label.cget("text").lower())
-                guess_label.append(label)
-            blue = []
-            blue_label = []
-            for i in range(len(guess)):
-                if guess[i] == self.choice[i]:
-                    blue.append(guess[i])
-                    blue_label.append(guess_label[i])
-            yellow = []
-            yellow_label = []
-            for i in range(len(guess)):
-                if guess_label[i] not in blue_label:
-                    yellow.append(guess[i])
-                    yellow_label.append(guess_label[i])
-            yellow_two = []
-            yellow_label_two = []
-            for i in range(len(yellow)):
-                if yellow[i] in self.choice:
-                    yellow_two.append(yellow[i])
-                    yellow_label_two.append(yellow_label[i])
-            label_remover = []
-            for i in range(len(yellow_two) - 1, -1, -1):
-                if yellow_two[i] in yellow_two[:i]:
-                    label_remover.append(yellow_label_two[i])
-            yellow_label = [i for i in yellow_label_two if i not in label_remover]
-            for item in blue_label:
-                item.configure(background="#3B6D8C")
-                item.update()
-            for item in yellow_label:
-                item.configure(background="#F2CC0F")
-                item.update()
-            if blue_label == guess_label:
-                self.homepage.topic_label["text"] = "You Win!"
-                self.row -= 1
-                self.game_over()
-            elif self.row == 5:
-                self.homepage.topic_label["text"] = "Game Over."
-                self.row -= 1
-                self.game_over()
-            self.row += 1
+        if self.overlay.started:
+            if self.cursor == self.row * len(self.choice):
+                guess = []
+                guess_label = []
+                for label in self.homepage.grid_objects[self.cursor - len(self.choice):self.cursor]:
+                    guess.append(label.cget("text").lower())
+                    guess_label.append(label)
+                blue = []
+                blue_label = []
+                for i in range(len(guess)):
+                    if guess[i] == self.choice[i]:
+                        blue.append(guess[i])
+                        blue_label.append(guess_label[i])
+                yellow = []
+                yellow_label = []
+                print(sum(1 for x in blue if x == guess[0]))
+                for i in range(len(guess)):
+                    # print(i, "\nguess", yellow.count(guess[i]), "\nblue", self.choice.count(guess[i]), "\nGuess",
+                    # guess, "\nBlue", blue, "\nguess[i]", guess[i])
+                    if guess_label[i] not in blue_label and yellow.count(guess[i]) + blue.count(
+                            guess[i]) < self.choice.count(guess[i]):
+                        yellow.append(guess[i])
+                        yellow_label.append(guess_label[i])
+                yellow_two = []
+                yellow_label_two = []
+                for i in range(len(yellow)):
+                    if yellow[i] in self.choice:
+                        yellow_two.append(yellow[i])
+                        yellow_label_two.append(yellow_label[i])
+                label_remover = []
+                for i in range(len(yellow_two) - 1, -1, -1):
+                    if yellow_two[i] in yellow_two[:i]:
+                        label_remover.append(yellow_label_two[i])
+                yellow_label = [i for i in yellow_label_two if i not in label_remover]
+                for item in blue_label:
+                    item.configure(background="#3B6D8C")
+                    item.update()
+                for item in yellow_label:
+                    item.configure(background="#F2CC0F")
+                    item.update()
+                if blue_label == guess_label:
+                    self.homepage.topic_label.config(font=("Noto Sans SemiBold", 14))
+                    self.homepage.topic_label["text"] = "You Win! Click the info button to start another game."
+                    self.game_over()
+                elif self.row == 5:
+                    self.homepage.topic_label.config(font=("Noto Sans SemiBold", 14))
+                    self.homepage.topic_label["text"] = "Game Over. Click the info button to start again."
+                    self.game_over()
+                else:
+                    self.row += 1
 
     def game_over(self):
+        self.overlay.topic.config(state=NORMAL)
         if self.games == 2:
-            print("Stuff")
+            self.overlay.started = False
+            self.keybinding()
+
+            now = datetime.now().time()
+            # Just use January the first, 2000
+            d1 = datetime(2000,1,1, now.hour, now.minute, now.second)
+            self.date = d1 + timedelta(minutes=1)
+            self.homepage.topic_label.config(text="You have reached your limit, play again at " + str(self.date.time()))
+            self.games=0
         else:
             self.overlay.started = False
             self.keybinding()
             self.games += 1
-            self.homepage.timer_screen.config(image=self.format_image(self.images[self.games], (50, 50)))
-            self.homepage.timer_screen.update()
-            self.root.after(1000, self.change_frame("overlay"))
+            img = self.format_image(self.images[self.games], (50, 50))
+            self.homepage.timer_screen.configure(image=img)
+            self.homepage.timer_screen.image = img
 
 
 class Overlay():
@@ -211,6 +225,7 @@ class HomePage():
     def __init__(self, root):
         self.reference = "homepage"
         self.blank = PhotoImage()
+        self.font = ("Noto Sans SemiBold", 20)
         self.window = Frame(root.root, bg="#0D0D13", width=0, height=0)
         self.window.grid(row=0, column=0, sticky="nsew")
         # self.window.pack(side=LEFT, expand=True, fill='both')
@@ -233,7 +248,7 @@ class HomePage():
         self.information.grid(row=0, column=0, sticky="nsew")
         self.title.grid(row=0, column=1, sticky="nsew")
         self.timer.grid(row=0, column=2, sticky="nsew")
-        self.topic.grid(row=1, column=1, sticky="nsew")
+        self.topic.grid(row=1, column=0, columnspan=3, sticky="nsew")
         self.letters.grid(row=2, column=0, columnspan=3, sticky="nsew", padx=10)
         self.keyboard.grid(row=3, column=0, columnspan=3, sticky="nsew", padx=20, pady=10)
 
@@ -267,7 +282,7 @@ class HomePage():
         self.infobutton.pack(side=LEFT, expand=True, fill='both')
 
         self.topic_label = Label(self.topic, bg="#0D0D13", fg="white", text="example label",
-                                 font=("Noto Sans SemiBold", 20), image=self.blank, compound="c", width=10, height=10)
+                                 font=self.font, image=self.blank, compound="c", width=10, height=10)
         self.topic_label.pack(side=LEFT, expand=True, fill='both')
 
         self.keyboard_maker(root)
@@ -283,6 +298,8 @@ class HomePage():
                       compound='c', bg="#29292E", fg="white")
             b.grid(row=math.floor(i / x), column=i % x, sticky="nsew", padx=2, pady=1)
             self.grid_objects.append(b)
+        for i in range(9):
+            self.letters.columnconfigure(i, weight=0)
         for i in range(x):
             self.letters.columnconfigure(i, weight=1)
         for i in range(x + (z - x)):
@@ -290,7 +307,7 @@ class HomePage():
 
     def keyboard_maker(self, root):
         def label_maker(type, i):
-            b = Button(type, width=20, height=20, image=self.blank, font=("Noto Sans SemiBold", 20),
+            b = Button(type, width=20, height=20, image=self.blank, font=self.font,
                        text=letters[i], compound='c', bg="#29292E", fg="white", relief="flat",
                        command=lambda: root.key_press(letters[i]))
             b.pack(side="left", fill="both", expand=True, padx=1, pady=1)
@@ -317,7 +334,7 @@ class HomePage():
                 elif i % x == 8:
                     b = Button(self.row_two, width=50, height=20, image=self.blank, font=("Noto Sans SemiBold", 15),
                                text=letters[i], compound='c', bg="#29292E", fg="white", relief="flat",
-                               command=lambda: self.test(letters[i]))
+                               command=lambda: root.enter(letters[i]))
                     b.pack(side="left", fill="both", expand=True, padx=1, pady=1)
                 elif i % x == 9:
                     pass
@@ -325,9 +342,6 @@ class HomePage():
                     label_maker(self.row_two, i)
         spacer = Label(self.row_one, width=20, height=20, image=self.blank, compound='c', bg="#0D0D13")
         spacer.pack(side="left", fill="both", expand=False, padx=1, pady=1)
-
-    def test(self, key):
-        print(key)
 
 
 if __name__ == "__main__":
