@@ -145,7 +145,7 @@ class MainProgram():
                     self.game_over()
                 elif self.row == 5:
                     self.homepage.topic_label.config(font=("Noto Sans SemiBold", 14))
-                    self.homepage.topic_label["text"] = "Game Over. Click the info button to start again."
+                    self.homepage.topic_label["text"] = "Game Over. The word was "+self.choice
                     self.game_over()
                 else:
                     self.row += 1
@@ -157,7 +157,6 @@ class MainProgram():
             self.keybinding()
 
             now = datetime.now().time()
-            # Just use January the first, 2000
             d1 = datetime(2000, 1, 1, now.hour, now.minute, now.second)
             self.date = d1 + timedelta(minutes=1)
             self.homepage.topic_label.config(text="You have reached your limit, play again at " + str(self.date.time()))
