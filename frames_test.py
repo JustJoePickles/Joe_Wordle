@@ -290,14 +290,14 @@ class HomePage():
         for i in range(x * z):
             b = Label(self.letters, width=20, height=20, image=self.blank, font=("Noto Sans SemiBold", 45),
                       text="",
-                      compound='c', bg="#29292E", fg="white")
+                      compound=TOP, bg="#29292E", fg="white")
             b.grid(row=math.floor(i / x), column=i % x, sticky="nsew", padx=2, pady=1)
             self.grid_objects.append(b)
         for i in range(9):
             self.letters.columnconfigure(i, weight=0)
         for i in range(x):
             self.letters.columnconfigure(i, weight=1)
-        for i in range(x + (z - x)):
+        for i in range(z):
             self.letters.rowconfigure(i, weight=1)
 
     def keyboard_maker(self, root):
